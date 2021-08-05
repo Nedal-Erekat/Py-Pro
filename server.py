@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = '/home/dev/Desktop/Py-Pro/file'
+app.config['UPLOAD_FOLDER'] = '/home/dev/Desktop/Py-Pro/static'
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -13,9 +13,9 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-    f = open().read()
-    print(f, '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    return render_template('index.html')
+    basename = os.listdir("./static")
+    print(basename, '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    return render_template('index.html', names=basename)
 
 @app.route("/hello")
 def hello_world():
@@ -43,3 +43,12 @@ def upload_img():
 @app.route('/uploads/<name>')
 def download_file(name):
     return send_from_directory(app.config["UPLOAD_FOLDER"], name)
+
+if __name__ == '__main__' :
+    app.run(host="0.0.0.0", debug=True)
+
+# $ export FLASK_APP=hello
+# $ flask run
+#  * Running on http://127.0.0.1:5000/
+
+# watchmedo auto-restart --patterns="*.py"  python ./server.py
