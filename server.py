@@ -36,11 +36,12 @@ def handle_upload_file(files):
     if f and allowed_file(f.filename):
         upload_file(f)
 
+# ========== middleware =====================
+
 def check_user_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if localStorage.getItem('username') is not None:
-            print(localStorage.getItem('username') is not None, '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
             return f(*args, **kwargs)
         return redirect('login')
     return decorated_function
