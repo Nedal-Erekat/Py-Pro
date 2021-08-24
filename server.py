@@ -1,6 +1,7 @@
 import os
 from flask import Flask, flash, request, redirect, render_template, url_for, send_from_directory, g
 from werkzeug.utils import secure_filename
+from localStoragePy import localStoragePy
 from login_middleware import check_user_login
 from functools import wraps
 
@@ -8,49 +9,74 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = '/Users/nedalerekat/Desktop/Py-Pro/static'
+localStorage = localStoragePy('py-project', 'json')
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def is_login():
+    return localStorage.getItem('username')
+
+def set_user(username):
+    return localStorage.setItem('username', username)
+
+def remove_user():
+    localStorage.removeItem('username')
+
+def get_all_img():
+    return os.listdir("/Users/nedalerekat/Desktop/Py-Pro/static")
+
+def upload_file(f):
+                filename = secure_filename(f.filename)
+                f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+def handle_upload_file(files):
+    f = files['file']
+    if f and allowed_file(f.filename):
+        upload_file(f)
+
 def check_user_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if request.form or g.user:
+        if localStorage.getItem('username') is not None:
+            print(localStorage.getItem('username') is not None, '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
             return f(*args, **kwargs)
-        return render_template('login.html')
+        return redirect('login')
     return decorated_function
 
+# ============================================
 
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 @check_user_login
 def index():
-    g.user = request.form['username']
-    basename = os.listdir("/Users/nedalerekat/Desktop/Py-Pro/static")
-    return render_template('index.html', names=basename)
+    if request.method == 'GET':
+        if is_login:
+            basename = get_all_img()
+            return render_template('index.html', names=basename)
 
 @app.route('/login', methods=['GET', 'POST'])
-def hello_world():
+def try_to_login():
     if request.method == 'GET':
         return render_template('login.html')
     
     if request.method == 'POST':
-        return redirect(request.url)
+        set_user(request.form['username'])
+        return redirect('/')
         
+@app.route('/logout', methods=['GET'])
+def logout_user():
+    remove_user()
+    return redirect('/login')
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_img():
     if request.method == 'POST':
         if request.files:
-            f = request.files['file']
-            if f and allowed_file(f.filename):
-                filename = secure_filename(f.filename)
-                f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                return redirect(request.url)
-                # return redirect(url_for('download_file', name=filename))
-
-    return render_template('index.html')
+            handle_upload_file(request.files)
+            return redirect(request.url)
+    if request.method == 'GET':
+        return render_template('uploaded.html')
 
 
 @app.route('/uploads/<name>')
